@@ -1,71 +1,179 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chatbot IA</title>
-    <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; background: #f4f4f9; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 15px; max-width: 70%; }
-        .user { background: #007bff; color: white; align-self: flex-end; }
-        .bot { background: #e9e9eb; color: black; align-self: flex-start; }
-        #input-container { padding: 20px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd; }
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:disabled { background: #ccc; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot IA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    #chat-box {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      border-radius: 15px;
+      background-color: #fff;
+      overflow-y: auto;
+      padding: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message-container {
+      display: flex;
+      align-items: flex-end;
+      margin: 5px 0;
+    }
+
+    .message {
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background-color: #007bff;
+      color: #fff;
+      border-bottom-right-radius: 0;
+      margin-left: 10px;
+    }
+
+    .bot {
+      background-color: #e5e5ea;
+      color: #000;
+      border-bottom-left-radius: 0;
+      margin-right: 10px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .user-avatar {
+      order: 2; /* avatar à droite */
+    }
+
+    .bot-avatar {
+      order: 1; /* avatar à gauche */
+    }
+
+    #chat-form {
+      display: flex;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 10px;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 20px 0 0 20px;
+      border: 1px solid #ccc;
+      border-right: none;
+      outline: none;
+    }
+
+    #send-btn {
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 0 20px 20px 0;
+      border: 1px solid #ccc;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    #send-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-    <div id="chat-container"></div>
-    <div id="input-container">
-        <input type="text" id="user-input" placeholder="Tapez votre message ici..." onkeypress="if(event.key === 'Enter') sendMessage()">
-        <button id="send-btn" onclick="sendMessage()">Envoyer</button>
-    </div>
+  <h1>Chatbot IA</h1>
+  <div id="chat-box"></div>
+  <form id="chat-form">
+    <input type="text" id="user-input" placeholder="Tapez votre message ici..." autocomplete="off"/>
+    <button type="submit" id="send-btn">Envoyer</button>
+  </form>
 
-    <script>
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
+  <script>
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("user-input");
+    const chatBox = document.getElementById("chat-box");
 
-        function addMessage(text, isUser) {
-            const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user' : 'bot'}`;
-            div.textContent = text;
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+    function addMessage(text, sender) {
+      const container = document.createElement("div");
+      container.classList.add("message-container");
 
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message) return;
+      const avatar = document.createElement("img");
+      avatar.classList.add("avatar");
+      if(sender === "user") {
+        avatar.src = "https://i.pravatar.cc/40?img=3"; // avatar utilisateur
+        avatar.classList.add("user-avatar");
+      } else {
+        avatar.src = "https://i.pravatar.cc/40?img=12"; // avatar bot
+        avatar.classList.add("bot-avatar");
+      }
 
-            addMessage(message, true);
-            userInput.value = '';
-            userInput.disabled = true;
-            sendBtn.disabled = true;
+      const msg = document.createElement("div");
+      msg.classList.add("message", sender);
+      msg.textContent = text;
 
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-                const data = await response.json();
-                if (data.response) {
-                    addMessage(data.response, false);
-                } else {
-                    addMessage("Désolé, une erreur est survenue.", false);
-                }
-            } catch (error) {
-                console.error(error);
-                addMessage("Erreur de connexion au serveur.", false);
-            } finally {
-                userInput.disabled = false;
-                sendBtn.disabled = false;
-                userInput.focus();
-            }
-        }
-    </script>
+      if(sender === "user") {
+        container.appendChild(msg);
+        container.appendChild(avatar);
+      } else {
+        container.appendChild(avatar);
+        container.appendChild(msg);
+      }
+
+      chatBox.appendChild(container);
+      chatBox.scrollTop = chatBox.scrollHeight; // défilement automatique
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userMessage = input.value.trim();
+      if (!userMessage) return;
+
+      addMessage(userMessage, "user");
+      input.value = "";
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMessage })
+        });
+        const data = await response.json();
+        addMessage(data.reply, "bot");
+      } catch (err) {
+        addMessage("Erreur : Impossible de contacter le serveur.", "bot");
+      }
+    });
+    <input type="file" id="imageInput" accept="image/*">
+<button onclick="sendImage()">📷 Envoyer image</button>
+  </script>
 </body>
 </html>

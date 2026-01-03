@@ -37,7 +37,7 @@ def chat():
             max_completion_tokens=8192
         )
         bot_message = response.choices[0].message.content
-        return jsonify({"response": bot_message})
+        return jsonify({"reply": bot_message})
     except Exception as e:
         print(f"Erreur API: {e}")
         return jsonify({"error": str(e)}), 500
