@@ -1,179 +1,129 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chatbot IA</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      margin: 0;
-      padding: 20px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PolyCode Pro - Terminal Élite</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-matlab.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
 
-    h1 {
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    #chat-box {
-      width: 100%;
-      max-width: 600px;
-      height: 400px;
-      border-radius: 15px;
-      background-color: #fff;
-      overflow-y: auto;
-      padding: 15px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message-container {
-      display: flex;
-      align-items: flex-end;
-      margin: 5px 0;
-    }
-
-    .message {
-      padding: 10px 15px;
-      border-radius: 20px;
-      max-width: 75%;
-      word-wrap: break-word;
-    }
-
-    .user {
-      background-color: #007bff;
-      color: #fff;
-      border-bottom-right-radius: 0;
-      margin-left: 10px;
-    }
-
-    .bot {
-      background-color: #e5e5ea;
-      color: #000;
-      border-bottom-left-radius: 0;
-      margin-right: 10px;
-    }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-
-    .user-avatar {
-      order: 2; /* avatar à droite */
-    }
-
-    .bot-avatar {
-      order: 1; /* avatar à gauche */
-    }
-
-    #chat-form {
-      display: flex;
-      width: 100%;
-      max-width: 600px;
-      margin-top: 10px;
-    }
-
-    #user-input {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 20px 0 0 20px;
-      border: 1px solid #ccc;
-      border-right: none;
-      outline: none;
-    }
-
-    #send-btn {
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 0 20px 20px 0;
-      border: 1px solid #ccc;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    #send-btn:hover {
-      background-color: #0056b3;
-    }
-  </style>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
 </head>
 <body>
-  <h1>Chatbot IA</h1>
-  <div id="chat-box"></div>
-  <form id="chat-form">
-    <input type="text" id="user-input" placeholder="Tapez votre message ici..." autocomplete="off"/>
-    <button type="submit" id="send-btn">Envoyer</button>
-  </form>
+    
+    <div id="auth-screen">
+        <div class="login-card">
+            <p class="secure-text">🔒 ACCÈS SÉCURISÉ BURKINA</p>
+            <h2>🚀 Terminal Home</h2>
 
-  <script>
-    const form = document.getElementById("chat-form");
-    const input = document.getElementById("user-input");
-    const chatBox = document.getElementById("chat-box");
+            <input type="text" id="username" placeholder="Nom complet">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="pass" placeholder="Mot de passe">
 
-    function addMessage(text, sender) {
-      const container = document.createElement("div");
-      container.classList.add("message-container");
+            <button class="btn-login" onclick="entrerDansLeTerminal()">S'INSCRIRE / CONNECTER</button>
 
-      const avatar = document.createElement("img");
-      avatar.classList.add("avatar");
-      if(sender === "user") {
-        avatar.src = "https://i.pravatar.cc/40?img=3"; // avatar utilisateur
-        avatar.classList.add("user-avatar");
-      } else {
-        avatar.src = "https://i.pravatar.cc/40?img=12"; // avatar bot
-        avatar.classList.add("bot-avatar");
-      }
+            <div style="margin-top: 20px; border-top: 1px solid #334155; padding-top: 15px;">
+                <p style="color: #94a3b8; font-size: 0.8em; margin-bottom: 15px; text-align: center;">OU</p>
 
-      const msg = document.createElement("div");
-      msg.classList.add("message", sender);
-      msg.textContent = text;
+                <button onclick="connexionGoogle()" style="width: 100%; padding: 12px; cursor: pointer; border-radius: 8px; border: none; background: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; color: #334155; shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+                    Continuer avec Google
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="terminal-screen" style="display: none;">
+        <header class="pro-header">
+            <div class="logo-box">💻 PolyCode Pro</div>
+            <div class="header-tools">
+    <span style="cursor:pointer;" onclick="basculerLangueInterface()">🇫🇷</span>
 
-      if(sender === "user") {
-        container.appendChild(msg);
-        container.appendChild(avatar);
-      } else {
-        container.appendChild(avatar);
-        container.appendChild(msg);
-      }
+     <button onclick="deconnexion()" style="background:none; border:none; cursor:pointer; font-size:1.2em;" title="Déconnexion">🚪</button>
+                
+    <button class="ai-btn" id="ai-btn" onclick="demanderAideIA()">+ Aide IA</button>
+    
+    <button class="icon-btn" onclick="toggleTheme()">🌗</button>
+            </div>
+        </header>
+        
+        <div class="editor-toolbar">
+            <div class="left-tools">
+                <select id="lang-select" onchange="updateEditor()">
+                    <option value="scilab" selected>📊 Scilab</option>
+                    <option value="python">🐍 Python</option>
+                    <option value="c">📄 C</option>
+                    <option value="cpp">💎 C++</option>
+                </select>
+                <button class="btn-tool" onclick="changeFontSize(-1)">A-</button>
+                <button class="btn-tool" onclick="changeFontSize(1)">A+</button>
+            </div>
 
-      chatBox.appendChild(container);
-      chatBox.scrollTop = chatBox.scrollHeight; // défilement automatique
-    }
+            <div class="action-group">
+                <button class="btn-clear" onclick="effacerConsole()">EFFACER</button>
+                <button class="btn-run" onclick="lancerCode()">LANCER ▶</button>
+            </div>
+        </div>
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const userMessage = input.value.trim();
-      if (!userMessage) return;
+        <div class="shortcut-bar">
+            <button onclick="addCode('\t')">TAB</button>
+            <button onclick="addCode('(')">(</button>
+            <button onclick="addCode(')')">)</button>
+            <button onclick="addCode('{')">{</button>
+            <button onclick="addCode('}')">}</button>
+            <button onclick="addCode(';')">;</button>
+            <button onclick="addCode(':')">:</button>
+            <button onclick="addCode('=')">=</button>
+        </div>
 
-      addMessage(userMessage, "user");
-      input.value = "";
+        <div class="code-zone">
+            <div class="line-numbers" id="line-numbers">1</div>
+            <div class="editor-wrapper">
+                <pre id="highlight-layer" aria-hidden="true"></pre>
+                <textarea id="editor" spellcheck="false" 
+                          oninput="updateEditor()" 
+                          onscroll="syncScroll()"
+                          placeholder="Écris ton code ici..."></textarea>
+            </div>
+        </div>
 
-      try {
-        const response = await fetch("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userMessage })
-        });
-        const data = await response.json();
-        addMessage(data.reply, "bot");
-      } catch (err) {
-        addMessage("Erreur : Impossible de contacter le serveur.", "bot");
-      }
-    });
-    <input type="file" id="imageInput" accept="image/*">
-<button onclick="sendImage()">📷 Envoyer image</button>
-  </script>
+        <div id="console-bottom">
+            <div id="console-output">
+                <span class="console-label">> Console prête...</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="plot-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#161b22; padding:20px; border-radius:10px; border:1px solid #30363d; max-width:90%; text-align:center;">
+            <h3 style="color:#7ee787; margin-top:0;">📊 Graphique PolyCode</h3>
+            <img id="plot-img" src="" style="max-width:100%; border-radius:5px; background:white;">
+            <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="telechargerGraphique()" style="background:#238636; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">💾 Enregistrer</button>
+                <button onclick="fermerGraphique()" style="background:#f85149; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">❌ Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

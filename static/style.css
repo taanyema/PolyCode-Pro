@@ -1,0 +1,262 @@
+:root {
+    --bg-dark: #020617; 
+    --card-bg: rgba(15, 23, 42, 0.8); 
+    --accent-green: #10b981;
+    --accent-blue: #3b82f6;
+    --text-gray: #94a3b8;
+    --neon-green: #22c55e;
+    --border-glow: rgba(34, 197, 94, 0.2);
+    --error-red: #ef4444;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600&display=swap');
+
+/* --- STRUCTURE ANTI-ÉCRASEMENT (CLAVIER MOBILE) --- */
+body, html { 
+    margin: 0; padding: 0; 
+    background: var(--bg-dark); 
+    color: #f1f5f9; 
+    font-family: 'Inter', sans-serif; 
+    overflow: hidden; /* Empêche le défilement de toute la page */
+    height: 100%; 
+    width: 100%;
+    position: fixed; /* Bloque l'interface en place quand le clavier sort */
+}
+
+/* --- AUTHENTIFICATION --- */
+#auth-screen { 
+    display: flex; justify-content: center; align-items: center; height: 100dvh; 
+    background: radial-gradient(circle at top right, #1e293b 0%, #020617 100%); 
+}
+
+.login-card { 
+    background: var(--card-bg); 
+    padding: 40px; border-radius: 24px; 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    width: 85%; max-width: 380px; text-align: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.secure-text { color: #fb7185; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+
+input {
+    width: 100%; padding: 12px; margin: 10px 0;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; color: white; outline: none;
+}
+
+.btn-login {
+    width: 100%; padding: 14px; background: var(--accent-blue);
+    border: none; border-radius: 12px; color: white; font-weight: bold;
+    cursor: pointer; margin-top: 15px; transition: 0.3s;
+}
+
+/* --- TERMINAL SCREEN --- */
+#terminal-screen {
+    display: flex; flex-direction: column; 
+    height: 100dvh; 
+    width: 100vw;
+}
+
+.pro-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 20px; background: #0f172a; border-bottom: 1px solid #1e293b;
+    flex-shrink: 0; /* Garde sa taille même si le clavier réduit l'écran */
+}
+
+/* --- BARRE D'OUTILS (HORIZONTAL STRICT) --- */
+.editor-toolbar {
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+    padding: 8px 15px;
+    background: #1e293b; 
+    border-bottom: 1px solid #334155;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+select { 
+    background: #0f172a; color: white; border: 1px solid #334155; 
+    padding: 6px; border-radius: 8px; outline: none; flex-shrink: 0;
+}
+
+.font-controls { display: flex; gap: 5px; flex-shrink: 0; }
+.font-controls button {
+    background: #0f172a; color: white; border: 1px solid #334155;
+    padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold;
+}
+
+.action-group { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.btn-run { background: var(--accent-green); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+.btn-clear { background: transparent; color: var(--text-gray); border: 1px solid #4b5563; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+
+/* --- SHORTCUT BAR --- */
+.shortcut-bar {
+    display: flex; gap: 5px; padding: 8px 15px; background: #0f172a; border-top: 1px solid #1e293b;
+    overflow-x: auto; flex-shrink: 0;
+}
+.shortcut-bar button {
+    background: #1e293b; color: var(--accent-blue); border: 1px solid #334155;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap;
+}
+
+/* --- ZONE D'ÉDITION ÉLÉGANTE (NUMÉROS ULTRA-MINCES) --- */
+.code-zone {
+    display: flex; 
+    flex: 1; /* L'éditeur s'adapte dynamiquement à l'espace restant */
+    background: #020617; 
+    position: relative;
+    overflow: hidden;
+}
+
+.line-numbers {
+    width: 24px;            /* Largeur style Desktop */
+    padding: 20px 0;
+    color: #334155;         /* Couleur discrète */
+    text-align: center;
+    background: #0f172a; 
+    font-size: 11px;        /* Plus petit pour le look pro */
+    font-family: 'Fira Code', monospace;
+    border-right: 1px solid #1e293b;
+    line-height: 24px; 
+    user-select: none;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.editor-wrapper { position: relative; flex: 1; height: 100%; overflow: hidden; }
+
+#editor, #highlight-layer {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    padding: 20px 15px; 
+    margin: 0;
+    font-size: 15px; font-family: 'Fira Code', monospace;
+    line-height: 24px; tab-size: 4; box-sizing: border-box;
+    white-space: pre; border: none;
+}
+
+    #editor {
+        z-index: 2;
+        background: transparent !important;
+        color: transparent !important;
+        caret-color: #22c55e;
+        resize: none;
+        outline: none;
+        overflow-y: auto;
+
+        /* AJOUTE CECI : */
+        -webkit-text-fill-color: transparent; /* Force la transparence sur iPhone/Chrome */
+        appearance: none;
+    }
+
+#highlight-layer { z-index: 1; background: transparent; pointer-events: none; overflow: hidden; }
+
+/* --- COLORATION SYNTAXIQUE (TOKENS) --- */
+.token.keyword { color: #3b82f6 !important; font-weight: bold; }
+.token.string { color: #fb923c !important; }
+.token.comment { color: #64748b !important; font-style: italic; }
+.token.number { color: #22c55e !important; }
+.token.function { color: #e9d5ff !important; }
+.token.operator { color: #94a3b8; }
+.token.class-name { color: #fbbf24; }
+
+/* --- CONSOLE --- */
+#console-bottom {
+    height: 150px; 
+    background: #020617; border-top: 2px solid #1e293b;
+    padding: 10px 15px; font-family: 'Fira Code', monospace; font-size: 14px;
+    color: #cbd5e1; overflow-y: auto; flex-shrink: 0;
+}
+
+.log-error { color: var(--error-red); font-weight: bold; }
+.log-success { color: var(--neon-green); font-weight: bold; }
+
+/* --- MODAL (IMAGES/PLOTS) --- */
+.modal {
+    display: none; position: fixed; z-index: 9999; 
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+    justify-content: center; align-items: center;
+}
+
+.modal-content {
+    background-color: #1e293b; padding: 20px;
+    border: 2px solid #22c55e; border-radius: 15px;
+    width: 90%; max-width: 500px; text-align: center;
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+}
+
+#plot-img { width: 100%; height: auto; border-radius: 8px; margin: 10px 0; background: white; }
+.btn-download { background-color: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+body.light-mode {
+    --bg-dark: #f8fafc; /* Fond de page gris clair */
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --text-gray: #64748b;
+    background: var(--bg-dark);
+    color: #1e293b;
+}
+
+/* Header et Toolbars en blanc */
+body.light-mode .pro-header, 
+body.light-mode .editor-toolbar, 
+body.light-mode .shortcut-bar {
+    background: #ffffff;
+    border-color: #e2e8f0;       /* Bordures discrètes */
+    color: #1e293b;
+}
+
+/* Zone d'édition en blanc */
+body.light-mode .code-zone {
+    background: #ffffff;
+}
+
+/* Numérotation des lignes en mode clair */
+body.light-mode .line-numbers {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-right: 1px solid #e2e8f0;
+}
+
+/* Éditeur de texte (Caret et Sélection) */
+body.light-mode #editor {
+    caret-color: #10b981;        /* Curseur vert */
+}
+
+/* Calque de coloration (Texte de base) */
+body.light-mode #highlight-layer {
+    color: #1e293b;
+}
+
+/* Console en bas (Gris doux) */
+body.light-mode #console-bottom {
+    background: #f8fafc;
+    color: #334155;
+    border-top: 2px solid #e2e8f0;
+}
+
+/* --- ADAPTATION DES TOKENS PRISM POUR LE MODE CLAIR --- */
+body.light-mode .token.keyword { color: #2563eb !important; } /* Bleu plus vif */
+body.light-mode .token.string { color: #ea580c !important; }  /* Orange foncé */
+body.light-mode .token.comment { color: #94a3b8 !important; }
+body.light-mode .token.number { color: #16a34a !important; }
+body.light-mode .token.function { color: #7c3aed !important; }
+
+/* Boutons secondaires en mode clair */
+body.light-mode .btn-clear {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+body.light-mode select, 
+body.light-mode .font-controls button,
+body.light-mode .shortcut-bar button {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
