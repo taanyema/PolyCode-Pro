@@ -245,6 +245,16 @@ function lancerCode() {
 
         // NOUVEAU : Gestion de Chart.js
         if (data.chart_data) {
+            if (data.chart_data.labels) {
+                data.chart_data.labels = data.chart_data.labels.map(l => 
+                    typeof l === 'number' ? Math.round(l * 100) / 100 : l
+                );
+            }
+            if (data.chart_data.values) {
+                data.chart_data.values = data.chart_data.values.map(v => 
+                    typeof v === 'number' ? Math.round(v * 100) / 100 : v
+                );
+            }
             document.getElementById('plot-modal').style.display = 'flex';
             const ctx = document.getElementById('polyChart').getContext('2d');
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import sys
 import io
 import subprocess
@@ -21,16 +21,26 @@ def execute_code():
     chart_data = None 
     result = ""
 
-    # --- 1. MOTEUR PYTHON ---
+    # --- 1. MOTEUR PYTHON (avec Alias Matplotlib) ---
     if lang_choice == "python":
         output_capture = io.StringIO()
         sys.stdout = output_capture
         try:
+            # Fonction interne pour capturer les données
             def tracer(labels, values, type='line'):
                 nonlocal chart_data
-                chart_data = {"labels": labels, "values": values, "type": type}
+                # Conversion en listes standards pour éviter les erreurs JSON
+                chart_data = {
+                    "labels": list(labels), 
+                    "values": [float(v) for v in values], 
+                    "type": type
+                }
 
-            exec_globals = {'tracer': tracer}
+            # Importation de Matplotlib pour créer l'alias
+            import matplotlib.pyplot as plt
+            plt.plot = tracer # L'étudiant fait plt.plot(), ça appelle tracer()
+
+            exec_globals = {'tracer': tracer, 'plt': plt, 'np': __import__('numpy', fromlist=[''])}
             exec(code, exec_globals)
             result = output_capture.getvalue()
         except Exception as e:
@@ -63,13 +73,14 @@ def execute_code():
             if os.path.exists(filename): os.remove(filename)
             if os.path.exists(output_exec): os.remove(output_exec)
 
-    # --- 3. MOTEUR OCTAVE / SCILAB ---
-    elif lang_choice == "scilab":
+    # --- 3. MOTEUR OCTAVE (avec Alias Plot) ---
+    elif lang_choice in ["scilab", "octave"]:
+        # Le Wrapper intercepte la commande plot() standard d'Octave
         pre_code = """
-        function tracer(x, y)
-          printf("CHART_DATA:labels=%s;values=%s\\n", char(jsonencode(x)), char(jsonencode(y)));
-        endfunction
-        """
+function plot(x, y)
+  printf("CHART_DATA:labels=%s;values=%s\\n", char(jsonencode(x)), char(jsonencode(y)));
+endfunction
+"""
         full_code = pre_code + code
         
         try:
@@ -80,7 +91,7 @@ def execute_code():
             )
             output = process.stdout + process.stderr
             
-            # Nettoyage des logs parasites (Drivers, QStandardPaths, Warnings)
+            # Nettoyage des logs parasites
             output = re.sub(r"QStandardPaths:.*?\n", "", output)
             output = re.sub(r"warning:.*?\n", "", output)
             
@@ -94,7 +105,6 @@ def execute_code():
                         "labels": [round(float(x), 2) for x in json.loads(labels_raw)],
                         "values": [round(float(v), 2) for v in json.loads(values_raw)]
                     }
-                    # On retire la ligne technique de l'affichage console
                     output = output.replace(match.group(0), "") 
             
             return jsonify({
@@ -104,16 +114,36 @@ def execute_code():
         except Exception as e:
             return jsonify({"output": f"Erreur Octave : {str(e)}"})
 
-    # Réponse par défaut
     return jsonify({"output": "Langage non supporté."})
 
 @app.route('/aide_ia', methods=['POST'])
 def aide_ia():
     data = request.get_json()
     error = data.get('error', '').lower()
-    conseil = "💡 Erreur de structure détectée." if "syntax" in error else "🚀 Logique correcte, vérifiez vos variables."
+    
+    # On peut même rendre ça un peu plus intelligent :
+    if "syntax" in error:
+        conseil = "💡 Oups ! Vérifie tes parenthèses ou tes deux-points (:)."
+    elif "indentation" in error:
+        conseil = "📐 Problème d'alignement ! En Python, les espaces comptent."
+    elif "name" in error:
+        conseil = "🔍 Tu utilises une variable qui n'existe pas encore."
+    elif "import" in error:
+        conseil = "📦 Il te manque une bibliothèque (ex: import numpy)."
+    else:
+        conseil = "🚀 Ta logique semble correcte, vérifie les valeurs de tes calculs."
+        
     return jsonify({"conseil": conseil})
 
+# --- ROUTES PWA (Installation Application) ---
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('.', 'manifest.json')
+
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('.', 'sw.js')
+
 if __name__ == '__main__':
-    # Configuration pour accès réseau local (Termux/Replit)
+    # Indispensable pour Render et l'accès réseau
     app.run(host='0.0.0.0', port=5000)
