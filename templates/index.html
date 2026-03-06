@@ -27,6 +27,7 @@
     });
   }
 </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     
@@ -113,15 +114,20 @@
         </div>
     </div>
 
-    <div id="plot-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:#161b22; padding:20px; border-radius:10px; border:1px solid #30363d; max-width:90%; text-align:center;">
-            <h3 style="color:#7ee787; margin-top:0;">📊 Graphique PolyCode</h3>
-            <img id="plot-img" src="" style="max-width:100%; border-radius:5px; background:white;">
-            <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
-                <button onclick="telechargerGraphique()" style="background:#238636; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">💾 Enregistrer</button>
-                <button onclick="fermerGraphique()" style="background:#f85149; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">❌ Fermer</button>
-            </div>
+    <div id="plot-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#161b22; padding:15px; border-radius:10px; border:1px solid #30363d; width:95%; max-width:600px; text-align:center;">
+        <h3 style="color:#7ee787; margin-top:0; font-family: sans-serif;">📊 Analyse PolyCode</h3>
+        
+        <div style="background: white; border-radius: 8px; padding: 10px; height: 400px;">
+            <canvas id="polyChart"></canvas>
         </div>
+
+        <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+            <button onclick="telechargerGraphique()" style="background:#238636; color:white; border:none; padding:12px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">💾 ENREGISTRER</button>
+            
+            <button onclick="fermerGraphique()" style="background:#f85149; color:white; border:none; padding:12px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">FERMER</button>
+        </div>
+    </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

@@ -242,10 +242,54 @@ function lancerCode() {
     .then(response => response.json())
     .then(data => {
         if (sound) sound.pause();
-        if (data.plot) {
-            document.getElementById('plot-img').src = "data:image/png;base64," + data.plot;
+
+        // NOUVEAU : Gestion de Chart.js
+        if (data.chart_data) {
             document.getElementById('plot-modal').style.display = 'flex';
+            const ctx = document.getElementById('polyChart').getContext('2d');
+
+            // On nettoie l'ancien graphique
+            if (window.myChart) { window.myChart.destroy(); }
+
+            // On dessine le nouveau avec un style propre
+            window.myChart = new Chart(ctx, {
+                type: data.chart_data.type || 'line',
+                data: {
+                    labels: data.chart_data.labels,
+                    datasets: [{
+                        label: 'Analyse PolyCode',
+                        data: data.chart_data.values,
+                        borderColor: '#238636',
+                        backgroundColor: 'rgba(35, 134, 54, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { 
+                                maxRotation: 0, 
+                                autoSkip: true, 
+                                maxTicksLimit: 10, 
+                                color: '#333333', // Gris foncé pour être visible
+                                font: { size: 11, weight: 'bold' } 
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' } // Grille légère noire
+                        },
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { color: '#333333' }, // Gris foncé ici aussi
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' } 
+                        }
+                    }
+                }
+            });
         }
+
         const texteBrut = data.output ? data.output.replace(/\r/g, "") : "";
         const sortieHighLight = texteBrut.split('\n').map(l => `> ${colorerConsole(l)}`).join('<br>');
         consoleOut.innerHTML = sortieHighLight;
@@ -281,17 +325,20 @@ function fermerGraphique() {
 }
 
 function telechargerGraphique() {
-    const img = document.getElementById('plot-img');
-    const base64Data = img.src;
+    const canvas = document.getElementById('polyChart');
+    
+    // Convertir le dessin en image
+    const imageData = canvas.toDataURL("image/png");
+    
+    // Créer un lien de téléchargement invisible
+    const lien = document.createElement('a');
+    lien.href = imageData;
+    lien.download = 'graphique_polycode.png';
+    document.body.appendChild(lien);
+    lien.click();
+    document.body.removeChild(lien);
 
-    // On ouvre l'image dans une nouvelle fenêtre
-    // Sur mobile, cela permet au navigateur de proposer "Enregistrer l'image"
-    const nouvelleFenetre = window.open();
-    nouvelleFenetre.document.write('<img src="' + base64Data + '" style="width:100%; height:auto;">');
-    nouvelleFenetre.document.title = "Enregistrer votre graphique";
-
-    // On garde quand même la notification sur la page principale
-    afficherNotification("💡 Appuyez longuement sur l'image pour l'enregistrer !");
+    afficherNotification("💾 Graphique enregistré dans vos téléchargements !");
 }
 
 function afficherNotification(message) {
