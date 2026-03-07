@@ -1,5 +1,5 @@
 const CACHE_NAME = 'polycode-v1';
-const assets = ['/', '/index.html', '/style.css', '/script.js', '/logo_polycode.png'];
+const assets = ['/', '/static/style.css', '/static/script.js', '/static/logo_polycode.png'];
 
 self.addEventListener('install', evt => {
     evt.waitUntil(

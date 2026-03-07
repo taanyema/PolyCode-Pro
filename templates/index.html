@@ -25,7 +25,9 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register("/sw.js") // Ajoute le slash ici
+        .then(reg => console.log("SW OK"))
+        .catch(err => console.log("SW Erreur", err));
     });
   }
 </script>
