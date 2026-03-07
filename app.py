@@ -21,24 +21,21 @@ def execute_code():
     chart_data = None 
     result = ""
 
-    # --- 1. MOTEUR PYTHON (avec Alias Matplotlib) ---
+    # --- 1. MOTEUR PYTHON ---
     if lang_choice == "python":
         output_capture = io.StringIO()
         sys.stdout = output_capture
         try:
-            # Fonction interne pour capturer les données
             def tracer(labels, values, type='line'):
                 nonlocal chart_data
-                # Conversion en listes standards pour éviter les erreurs JSON
                 chart_data = {
                     "labels": list(labels), 
                     "values": [float(v) for v in values], 
                     "type": type
                 }
 
-            # Importation de Matplotlib pour créer l'alias
             import matplotlib.pyplot as plt
-            plt.plot = tracer # L'étudiant fait plt.plot(), ça appelle tracer()
+            plt.plot = tracer 
 
             exec_globals = {'tracer': tracer, 'plt': plt, 'np': __import__('numpy', fromlist=[''])}
             exec(code, exec_globals)
@@ -53,7 +50,7 @@ def execute_code():
             "chart_data": chart_data
         })
 
-    # --- 2. MOTEUR C / C++ ---
+    # --- 2. MOTEUR C / C++ (AMÉLIORÉ AVEC GRAPHIQUES) ---
     elif lang_choice in ["c", "cpp"]:
         extension = "c" if lang_choice == "c" else "cpp"
         compiler = "gcc" if lang_choice == "c" else "g++"
@@ -62,27 +59,54 @@ def execute_code():
         try:
             with open(filename, "w") as f:
                 f.write(code)
+            
+            # Compilation
             compile_proc = subprocess.run([compiler, filename, "-o", output_exec], capture_output=True, text=True)
             if compile_proc.returncode != 0:
                 return jsonify({"output": f"ERREUR COMPILATION :\n{compile_proc.stderr}"})
+            
+            # Exécution
             run_proc = subprocess.run([f"./{output_exec}"], capture_output=True, text=True)
-            return jsonify({"output": run_proc.stdout + run_proc.stderr})
+            output = run_proc.stdout + run_proc.stderr
+
+            # --- DÉTECTEUR DE GRAPHIQUE UNIVERSEL POUR C/C++ ---
+            # Format attendu en C/C++ : printf("PLOT:1,2,3|10,20,30\n");
+            if "PLOT:" in output:
+                try:
+                    # Extraction de la ligne PLOT
+                    match = re.search(r"PLOT:(.*?)\|(.*?)\n", output)
+                    if match:
+                        labels_str = match.group(1).split(",")
+                        values_str = match.group(2).split(",")
+                        
+                        chart_data = {
+                            "labels": [s.strip() for s in labels_str],
+                            "values": [float(v) for v in values_str],
+                            "type": "line"
+                        }
+                        # On retire la ligne technique de la console pour l'étudiant
+                        output = output.replace(match.group(0), "")
+                except:
+                    pass # En cas d'erreur de format, on ignore juste le graphique
+
+            return jsonify({
+                "output": output if output.strip() else "Exécuté avec succès.",
+                "chart_data": chart_data
+            })
         except Exception as e:
             return jsonify({"output": f"ERREUR SYSTÈME : {str(e)}"})
         finally:
             if os.path.exists(filename): os.remove(filename)
             if os.path.exists(output_exec): os.remove(output_exec)
 
-    # --- 3. MOTEUR OCTAVE (avec Alias Plot) ---
+    # --- 3. MOTEUR OCTAVE ---
     elif lang_choice in ["scilab", "octave"]:
-        # Le Wrapper intercepte la commande plot() standard d'Octave
         pre_code = """
 function plot(x, y)
   printf("CHART_DATA:labels=%s;values=%s\\n", char(jsonencode(x)), char(jsonencode(y)));
 endfunction
 """
         full_code = pre_code + code
-        
         try:
             process = subprocess.run(
                 ["octave", "--no-gui", "--quiet", "--eval", full_code],
@@ -90,12 +114,9 @@ endfunction
                 env={**os.environ, "PAGER": "cat"}
             )
             output = process.stdout + process.stderr
-            
-            # Nettoyage des logs parasites
             output = re.sub(r"QStandardPaths:.*?\n", "", output)
             output = re.sub(r"warning:.*?\n", "", output)
             
-            # Extraction des données CHART_DATA
             if "CHART_DATA:" in output:
                 match = re.search(r"CHART_DATA:labels=(.*?);values=(.*?)\n", output)
                 if match:
@@ -120,8 +141,6 @@ endfunction
 def aide_ia():
     data = request.get_json()
     error = data.get('error', '').lower()
-    
-    # On peut même rendre ça un peu plus intelligent :
     if "syntax" in error:
         conseil = "💡 Oups ! Vérifie tes parenthèses ou tes deux-points (:)."
     elif "indentation" in error:
@@ -132,10 +151,8 @@ def aide_ia():
         conseil = "📦 Il te manque une bibliothèque (ex: import numpy)."
     else:
         conseil = "🚀 Ta logique semble correcte, vérifie les valeurs de tes calculs."
-        
     return jsonify({"conseil": conseil})
 
-# --- ROUTES PWA (Installation Application) ---
 @app.route('/manifest.json')
 def serve_manifest():
     return send_from_directory('.', 'manifest.json')
