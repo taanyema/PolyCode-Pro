@@ -384,3 +384,11 @@ function effacerConsole() {
     const langApp = localStorage.getItem('polycode_app_lang') || 'fr';
     consoleOut.innerHTML = translations[langApp].ready;
 }
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker enregistré !'))
+            .catch(err => console.log('Erreur SW:', err));
+    });
+}
