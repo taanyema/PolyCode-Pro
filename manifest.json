@@ -2,18 +2,18 @@
   "name": "PolyCode Pro",
   "short_name": "PolyCode",
   "description": "L'éditeur de code multi-langages par Coulidiati",
-  "start_url": "index.html",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#007bff",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
   "icons": [
     {
-      "src": "logo_polycode.png",
+      "src": "/static/logo_polycode.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "logo_polycode.png",
+      "src": "/static/logo_polycode.png",
       "sizes": "512x512",
       "type": "image/png"
     }
