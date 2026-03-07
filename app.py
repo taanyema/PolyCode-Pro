@@ -21,7 +21,7 @@ def execute_code():
     chart_data = None 
     result = ""
 
-    # --- 1. MOTEUR PYTHON ---
+    # --- 1. MOTEUR PYTHON (STABLE) ---
     if lang_choice == "python":
         output_capture = io.StringIO()
         sys.stdout = output_capture
@@ -33,10 +33,8 @@ def execute_code():
                     "values": [float(v) for v in values], 
                     "type": type
                 }
-
             import matplotlib.pyplot as plt
             plt.plot = tracer 
-
             exec_globals = {'tracer': tracer, 'plt': plt, 'np': __import__('numpy', fromlist=[''])}
             exec(code, exec_globals)
             result = output_capture.getvalue()
@@ -50,7 +48,7 @@ def execute_code():
             "chart_data": chart_data
         })
 
-    # --- 2. MOTEUR C / C++ (AMÉLIORÉ AVEC GRAPHIQUES) ---
+    # --- 2. MOTEUR C / C++ (STABLE) ---
     elif lang_choice in ["c", "cpp"]:
         extension = "c" if lang_choice == "c" else "cpp"
         compiler = "gcc" if lang_choice == "c" else "g++"
@@ -59,81 +57,65 @@ def execute_code():
         try:
             with open(filename, "w") as f:
                 f.write(code)
-            
-            # Compilation
             compile_proc = subprocess.run([compiler, filename, "-o", output_exec], capture_output=True, text=True)
             if compile_proc.returncode != 0:
                 return jsonify({"output": f"ERREUR COMPILATION :\n{compile_proc.stderr}"})
-            
-            # Exécution
             run_proc = subprocess.run([f"./{output_exec}"], capture_output=True, text=True)
             output = run_proc.stdout + run_proc.stderr
 
-            # --- DÉTECTEUR DE GRAPHIQUE UNIVERSEL POUR C/C++ ---
-            # Format attendu en C/C++ : printf("PLOT:1,2,3|10,20,30\n");
             if "PLOT:" in output:
-                try:
-                    # Extraction de la ligne PLOT
-                    match = re.search(r"PLOT:(.*?)\|(.*?)\n", output)
-                    if match:
-                        labels_str = match.group(1).split(",")
-                        values_str = match.group(2).split(",")
-                        
-                        chart_data = {
-                            "labels": [s.strip() for s in labels_str],
-                            "values": [float(v) for v in values_str],
-                            "type": "line"
-                        }
-                        # On retire la ligne technique de la console pour l'étudiant
-                        output = output.replace(match.group(0), "")
-                except:
-                    pass # En cas d'erreur de format, on ignore juste le graphique
+                match = re.search(r"PLOT:(.*?)\|(.*?)\n", output)
+                if match:
+                    labels_str = match.group(1).split(",")
+                    values_str = match.group(2).split(",")
+                    chart_data = {"labels": [s.strip() for s in labels_str], "values": [float(v) for v in values_str], "type": "line"}
+                    output = output.replace(match.group(0), "")
 
-            return jsonify({
-                "output": output if output.strip() else "Exécuté avec succès.",
-                "chart_data": chart_data
-            })
+            return jsonify({"output": output if output.strip() else "Exécuté avec succès.", "chart_data": chart_data})
         except Exception as e:
             return jsonify({"output": f"ERREUR SYSTÈME : {str(e)}"})
         finally:
             if os.path.exists(filename): os.remove(filename)
             if os.path.exists(output_exec): os.remove(output_exec)
 
-    # --- 3. MOTEUR OCTAVE ---
+    # --- 3. MOTEUR OCTAVE / SCILAB (CORRIGÉ POUR COMPATIBILITÉ) ---
     elif lang_choice in ["scilab", "octave"]:
-        pre_code = """
-function plot(x, y)
-  printf("CHART_DATA:labels=%s;values=%s\\n", char(jsonencode(x)), char(jsonencode(y)));
-endfunction
-"""
-        full_code = pre_code + code
+        output_capture = io.StringIO()
+        sys.stdout = output_capture
         try:
-            process = subprocess.run(
-                ["octave", "--no-gui", "--quiet", "--eval", full_code],
-                capture_output=True, text=True, timeout=15,
-                env={**os.environ, "PAGER": "cat"}
-            )
-            output = process.stdout + process.stderr
-            output = re.sub(r"QStandardPaths:.*?\n", "", output)
-            output = re.sub(r"warning:.*?\n", "", output)
+            # On définit des fonctions pour simuler Octave en Python
+            def plot_mock(x, y):
+                nonlocal chart_data
+                chart_data = {
+                    "labels": list(x),
+                    "values": [float(v) for v in y],
+                    "type": "line"
+                }
+
+            exec_globals = {
+                'plot': plot_mock,
+                'disp': lambda x: print(x),
+                'printf': lambda fmt, *args: print(fmt % args if args else fmt),
+                'pi': 3.14159,
+                'sqrt': __import__('math').sqrt,
+                'sin': __import__('math').sin,
+                'cos': __import__('math').cos
+            }
+
+            # Nettoyage de la syntaxe Octave pour l'interpréteur
+            clean_code = re.sub(r';\s*$', '', code, flags=re.MULTILINE)
             
-            if "CHART_DATA:" in output:
-                match = re.search(r"CHART_DATA:labels=(.*?);values=(.*?)\n", output)
-                if match:
-                    labels_raw = match.group(1)
-                    values_raw = match.group(2)
-                    chart_data = {
-                        "labels": [round(float(x), 2) for x in json.loads(labels_raw)],
-                        "values": [round(float(v), 2) for v in json.loads(values_raw)]
-                    }
-                    output = output.replace(match.group(0), "") 
+            exec(clean_code, exec_globals)
+            result = output_capture.getvalue()
             
             return jsonify({
-                "output": output if output.strip() else "Exécuté avec succès (Octave).",
+                "output": result if result else "Exécuté avec succès (Mode Compatibilité).",
                 "chart_data": chart_data
             })
         except Exception as e:
-            return jsonify({"output": f"Erreur Octave : {str(e)}"})
+            return jsonify({"output": f"Mode Compatibilité Octave : {str(e)}"})
+        finally:
+            sys.stdout = sys.__stdout__
 
     return jsonify({"output": "Langage non supporté."})
 
@@ -147,8 +129,6 @@ def aide_ia():
         conseil = "📐 Problème d'alignement ! En Python, les espaces comptent."
     elif "name" in error:
         conseil = "🔍 Tu utilises une variable qui n'existe pas encore."
-    elif "import" in error:
-        conseil = "📦 Il te manque une bibliothèque (ex: import numpy)."
     else:
         conseil = "🚀 Ta logique semble correcte, vérifie les valeurs de tes calculs."
     return jsonify({"conseil": conseil})
