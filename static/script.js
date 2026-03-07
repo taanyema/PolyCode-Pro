@@ -26,8 +26,10 @@ auth.onAuthStateChanged((user) => {
     if (user) {
         // CONNECTÉ
         if(ecranLogin) ecranLogin.style.display = 'none';
-        if(ecranApp) ecranApp.style.display = 'block';
-        console.log("Utilisateur connecté :", user.displayName);
+        if(ecranApp) 
+ecranApp.style.display = 'flex';
+    const nomAffiche = user.displayName || localStorage.getItem('polycode_user_name') || "Utilisateur";
+console.log("Utilisateur connecté :", nomAffiche);
     } else {
         // DÉCONNECTÉ
         if(ecranLogin) ecranLogin.style.display = 'flex';
@@ -184,9 +186,17 @@ function entrerDansLeTerminal() {
         alert("Veuillez entrer votre nom.");
         return;
     }
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('terminal-screen').style.display = 'flex';
-    updateEditor(); 
+
+    // ON UTILISE FIREBASE POUR CRÉER UNE SESSION RÉELLE
+    auth.signInAnonymously()
+        .then(() => {
+            // On stocke le nom pour l'affichage plus tard
+            localStorage.setItem('polycode_user_name', user);
+            console.log("Session anonyme démarrée pour :", user);
+        })
+        .catch((error) => {
+            alert("Erreur de session : " + error.message);
+        });
 }
 
 function addCode(char) {
