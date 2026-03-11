@@ -21,7 +21,7 @@ def execute_code():
     chart_data = None 
     result = ""
 
-    # --- 1. MOTEUR PYTHON (STABLE) ---
+    # --- 1. MOTEUR PYTHON ---
     if lang_choice == "python":
         output_capture = io.StringIO()
         sys.stdout = output_capture
@@ -48,7 +48,7 @@ def execute_code():
             "chart_data": chart_data
         })
 
-    # --- 2. MOTEUR C / C++ (STABLE) ---
+    # --- 2. MOTEUR C / C++ ---
     elif lang_choice in ["c", "cpp"]:
         extension = "c" if lang_choice == "c" else "cpp"
         compiler = "gcc" if lang_choice == "c" else "g++"
@@ -78,44 +78,53 @@ def execute_code():
             if os.path.exists(filename): os.remove(filename)
             if os.path.exists(output_exec): os.remove(output_exec)
 
-    # --- 3. MOTEUR OCTAVE / SCILAB (CORRIGÉ POUR COMPATIBILITÉ) ---
+    # --- 3. MOTEUR OCTAVE / SCILAB (NETTOYÉ ET OPTIMISÉ) ---
     elif lang_choice in ["scilab", "octave"]:
-        output_capture = io.StringIO()
-        sys.stdout = output_capture
+        filename = "temp_code.m"
         try:
-            # On définit des fonctions pour simuler Octave en Python
-            def plot_mock(x, y):
-                nonlocal chart_data
-                chart_data = {
-                    "labels": list(x),
-                    "values": [float(v) for v in y],
-                    "type": "line"
-                }
-
-            exec_globals = {
-                'plot': plot_mock,
-                'disp': lambda x: print(x),
-                'printf': lambda fmt, *args: print(fmt % args if args else fmt),
-                'pi': 3.14159,
-                'sqrt': __import__('math').sqrt,
-                'sin': __import__('math').sin,
-                'cos': __import__('math').cos
-            }
-
-            # Nettoyage de la syntaxe Octave pour l'interpréteur
-            clean_code = re.sub(r';\s*$', '', code, flags=re.MULTILINE)
+            # On force le mode silencieux et sans avertissements
+            full_code = "warning('off', 'all');\n" + code
+            with open(filename, "w") as f:
+                f.write(full_code)
             
-            exec(clean_code, exec_globals)
-            result = output_capture.getvalue()
+            # Configuration de l'environnement pour supprimer les déchets (erreurs Qt/écran)
+            env = os.environ.copy()
+            env["QT_QPA_PLATFORM"] = "offscreen"
             
+            run_proc = subprocess.run(
+                ["octave", "--no-gui", "--quiet", "--no-window-system", "--eval", f"source('{filename}');"], 
+                capture_output=True, 
+                text=True, 
+                timeout=15,
+                env=env
+            )
+            
+            # On ne prend que le stdout (les sorties de tes calculs) pour éviter les déchets du stderr
+            output = run_proc.stdout
+
+            # Extraction du PLOT
+            if "PLOT:" in output:
+                match = re.search(r"PLOT:(.*?)\|(.*?)(?:\n|$)", output)
+                if match:
+                    labels_str = match.group(1).split(",")
+                    values_str = match.group(2).split(",")
+                    chart_data = {
+                        "labels": [s.strip() for s in labels_str], 
+                        "values": [float(v) for v in values_str], 
+                        "type": "line"
+                    }
+                    output = output.replace(match.group(0), "")
+
             return jsonify({
-                "output": result if result else "Exécuté avec succès (Mode Compatibilité).",
+                "output": output if output.strip() else "Exécuté avec succès.", 
                 "chart_data": chart_data
             })
+        except subprocess.TimeoutExpired:
+            return jsonify({"output": "ERREUR : Temps d'exécution dépassé (Boucle infinie ?)."})
         except Exception as e:
-            return jsonify({"output": f"Mode Compatibilité Octave : {str(e)}"})
+            return jsonify({"output": f"ERREUR SYSTÈME : {str(e)}"})
         finally:
-            sys.stdout = sys.__stdout__
+            if os.path.exists(filename): os.remove(filename)
 
     return jsonify({"output": "Langage non supporté."})
 
@@ -124,13 +133,11 @@ def aide_ia():
     data = request.get_json()
     error = data.get('error', '').lower()
     if "syntax" in error:
-        conseil = "💡 Oups ! Vérifie tes parenthèses ou tes deux-points (:)."
+        conseil = "💡 Oups ! Vérifie tes parenthèses, tes points-virgules ou tes deux-points (:)."
     elif "indentation" in error:
         conseil = "📐 Problème d'alignement ! En Python, les espaces comptent."
-    elif "name" in error:
-        conseil = "🔍 Tu utilises une variable qui n'existe pas encore."
     else:
-        conseil = "🚀 Ta logique semble correcte, vérifie les valeurs de tes calculs."
+        conseil = "🚀 Vérifie la logique de ton code ou la syntaxe du langage."
     return jsonify({"conseil": conseil})
 
 @app.route('/manifest.json')
@@ -142,6 +149,5 @@ def serve_sw():
     return send_from_directory('.', 'sw.js')
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
